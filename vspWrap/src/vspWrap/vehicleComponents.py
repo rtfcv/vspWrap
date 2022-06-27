@@ -15,6 +15,8 @@ FUSELAGE='FUSELAGE'
 BODYOFREVOLUTION='BODYOFREVOLUTION'
 WING='WING'
 
+IGNORE=1.0E16
+
 def geomParmDict(geomID: str):
     parmIds = vsp.GetGeomParmIDs(geomID)
     return {
@@ -23,8 +25,11 @@ def geomParmDict(geomID: str):
     }
 
 
-def pp(geom: str):
-    geomParms = geomParmDict(geom)
+def pp(geom: 'Geom'):
+    '''
+    prints parameter and its value of Geom objects
+    '''
+    geomParms = geomParmDict(geom.geom)
     print(json.dumps(
         {key: vsp.GetParmVal(geomParms[key]) for key in geomParms},
         indent=2
@@ -39,8 +44,11 @@ def xsecParmDict(xsecID: str):
     }
 
 
-def ppXSec(xsecID: str):
-    xsecParms = xsecParmDict(xsecID)
+def ppXSec(xsec: 'XSec'):
+    '''
+    prints parameter and its value of XSec objects
+    '''
+    xsecParms = xsecParmDict(xsec.xsec)
     print(json.dumps(
         {key: vsp.GetParmVal(xsecParms[key]) for key in xsecParms},
         indent=2
@@ -166,7 +174,7 @@ class EasyFuselage(Geom):
     def insertXSec(self,
                    index: int,
                    shape):
-        return AttributeError(geom, index, shape)
+        return AttributeError(index, shape)
 
     def update(self):
         super().update()
@@ -174,7 +182,7 @@ class EasyFuselage(Geom):
         l_fus = self.l_fus
         b_fus = self.b_fus
         h_fus = self.h_fus
-        
+
         nose_ratio = self.nose_ratio
         tail_ratio = self.tail_ratio
 
@@ -193,16 +201,13 @@ class EasyFuselage(Geom):
             sec.setEllipse_Width(b_fus)
 
         # # nose
-        fus.xSecSurf.xSecs[0].setEllipse_Height(h_fus/3)
-        fus.xSecSurf.xSecs[0].setEllipse_Width(b_fus/3)
+        fus.xSecSurf.xSecs[0].setEllipse_Height(h_fus/4)
+        fus.xSecSurf.xSecs[0].setEllipse_Width(b_fus/5)
         fus.xSecSurf.xSecs[0].setZLocPercent(-h_fus/6/l_fus)
 
-        fus.xSecSurf.xSecs[0].setTBSym(0)
-        fus.xSecSurf.xSecs[0].setBottomRAngleSet(0)
-        fus.xSecSurf.xSecs[0].setBottomLAngle(30)
-        fus.xSecSurf.xSecs[0].setRightRAngleSet(0)
-        fus.xSecSurf.xSecs[0].setRightLAngle(45)
+        fus.xSecSurf.xSecs[0].setXSecTanAngles(top=45, bottom=30, left=32, right=32)
 
+        # # middle sections
         fus.xSecSurf.xSecs[1].setXLocPercent(nose_ratio * h_fus/l_fus)
 
         fus.xSecSurf.xSecs[3].setXLocPercent(1 - tail_ratio * h_fus/l_fus)
@@ -212,15 +217,7 @@ class EasyFuselage(Geom):
         fus.xSecSurf.xSecs[4].setEllipse_Width(b_fus/6)
         fus.xSecSurf.xSecs[4].setZLocPercent(h_fus/3/l_fus)
 
-        fus.xSecSurf.xSecs[4].setTBSym(0)
-        # # # this has to be top in order to work
-        fus.xSecSurf.xSecs[4].setTopRAngleSet(0)
-        fus.xSecSurf.xSecs[4].setTopLAngle(0)
-        fus.xSecSurf.xSecs[4].setBottomRAngleSet(0)
-        fus.xSecSurf.xSecs[4].setBottomLAngle(-30)
-        # # # this has to be right in order to work
-        fus.xSecSurf.xSecs[4].setRightRAngleSet(0)
-        fus.xSecSurf.xSecs[4].setRightLAngle(-10)
+        fus.xSecSurf.xSecs[4].setXSecTanAngles(top=0, bottom=-30, left=-10, right=-10)
 
     def setLBH(self, l, b, h):
         self.l_fus=l
@@ -287,6 +284,9 @@ class XSec:
 
     def getParmIDs(self):
         return xsecParmDict(self.xsec)
+
+    def setXSecTanAngles(self, side=vsp.XSEC_BOTH_SIDES, top=IGNORE, right=IGNORE, bottom=IGNORE, left=IGNORE):
+        vsp.SetXSecTanAngles(self.xsec, side=side, top=top, right=right, bottom=bottom, left=left)
 
     def update(self):
         self.parmIDs = self.getParmIDs()

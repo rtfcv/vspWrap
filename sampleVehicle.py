@@ -1,6 +1,7 @@
 import openvsp as vsp
 # import vehicle as v
 import vspWrap as v
+from pprint import pprint
 
 # PARAMETERS
 h_fus = 3.0
@@ -10,11 +11,23 @@ l_fus = 30.0
 AR_wing = 10
 S_wing = 90
 
+D_eng = 1.25
+l_eng = 2
+
 # fuselage ################################################################
 fus = v.EasyFuselage(v.FUSELAGE)
 
 # doing this messes things up..., which shouldn't happen
 fus.setLBH(l_fus, b_fus, h_fus)
+
+fus.setTess_U(16.0 * 3)
+fus.setTess_W(17.0 * 3)
+fus.setCapUMinTess(9 * 2)
+
+fus.xSecSurf.xSecs[1].setSectTess_U(6.0*3.0)
+
+# v.ppXSec(fus.xSecSurf.xSecs[0])
+v.pp(fus)
 
 # wing ####################################################################
 wing = fus.addWing()
@@ -46,6 +59,9 @@ vStab.setX_Rel_Rotation(90)
 # nacelle #################################################################
 nacelle = wing.addChild(v.Nacelle(v.BODYOFREVOLUTION, wing))
 
+nacelle.setTess_U(16.0 * 2)
+nacelle.setTess_W(17.0 * 2)
+
 # make it symmetrical across XZ plane
 nacelle.setSym_Planar_Flag(vsp.SYM_XZ)
 
@@ -54,7 +70,8 @@ nacelle.setX_Rel_Location(0.38*l_fus)
 nacelle.setZ_Rel_Location(-0.5*h_fus)
 
 # set length
-nacelle.setChord(2)
+nacelle.setDiameter(D_eng)
+nacelle.setChord(l_eng)
 
 # export ##################################################################
 vsp.ExportFile('sampleVehicle.stl', 0, vsp.EXPORT_STL)
